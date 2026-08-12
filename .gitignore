@@ -1,0 +1,29 @@
+# Dependencias
+node_modules/
+vendor/
+venv/
+__pycache__/
+*.pyc
+
+# Builds
+dist/
+build/
+out/
+.next/
+bin/
+obj/
+*.tsbuildinfo
+
+# Env y secretos
+.env
+.env.*
+!.env.example
+.dev.vars
+
+# Editor/OS
+.DS_Store
+*.log
+
+# Local
+.wrangler/
+.dev.vars

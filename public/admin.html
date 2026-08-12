@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Panel del CV</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = { darkMode: 'class', theme: { extend: { colors: { brand: {
+  50:'#eef2ff',100:'#e0e7ff',200:'#c7d2fe',300:'#a5b4fc',400:'#818cf8',
+  500:'#6366f1',600:'#4f46e5',700:'#4338ca',800:'#3730a3',900:'#1e3a8a' } } } } }
+</script>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%231e3a8a'/><text x='50' y='70' font-size='56' text-anchor='middle'>⚙</text></svg>">
+<style>
+  .fld { width:100%; border:1px solid #cbd5e1; border-radius:.5rem; padding:.45rem .6rem; font-size:.875rem; outline:none; }
+  .fld:focus { border-color:transparent; box-shadow:0 0 0 2px #6366f1; }
+  .lbl { font-size:.7rem; font-weight:600; color:#64748b; text-transform:uppercase; letter-spacing:.04em; }
+  .btn-xs { font-size:.7rem; padding:.15rem .4rem; border-radius:.3rem; border:1px solid #cbd5e1; background:#fff; }
+  .btn-xs:hover { background:#f1f5f9; }
+  .btn-xs.danger:hover { background:#fee2e2; border-color:#fca5a5; color:#b91c1c; }
+</style>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen">
+
+<div class="max-w-5xl mx-auto p-4 sm:p-8 space-y-6">
+
+  <header class="flex items-center justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-extrabold text-slate-900">Panel del CV</h1>
+      <p class="text-sm text-slate-500">Edita tu CV base y genera versiones por vacante.</p>
+    </div>
+    <a href="/" class="text-sm font-semibold text-brand-700 hover:underline">← Ver CV</a>
+  </header>
+
+  <!-- ─────────── Token ─────────── -->
+  <section id="auth" class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+    <label class="block text-sm font-semibold mb-2">Token de administrador</label>
+    <div class="flex gap-2">
+      <input id="token" type="password" placeholder="El valor de ADMIN_TOKEN" class="fld flex-1">
+      <button id="btn-auth" class="rounded-lg bg-brand-700 hover:bg-brand-800 text-white px-4 py-2 text-sm font-semibold">Entrar</button>
+    </div>
+    <p id="auth-msg" class="text-sm mt-2"></p>
+  </section>
+
+  <div id="panel" class="hidden space-y-6">
+
+    <!-- ─────────── Pestañas ─────────── -->
+    <div class="flex gap-1 border-b border-slate-300">
+      <button data-tab="cv"       class="admin-tab px-4 py-2 text-sm font-semibold rounded-t-lg">CV base</button>
+      <button data-tab="variants" class="admin-tab px-4 py-2 text-sm font-semibold rounded-t-lg">Variantes por vacante</button>
+    </div>
+
+    <!-- ══════════════ CV BASE ══════════════ -->
+    <section id="tab-cv" class="space-y-4">
+      <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+          <h2 class="font-bold">Tu CV</h2>
+          <div class="flex items-center gap-2">
+            <button id="cv-reset" class="btn-xs danger">Restaurar el original</button>
+            <button id="cv-save" class="rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white px-4 py-2 text-sm font-semibold">Guardar CV</button>
+          </div>
+        </div>
+        <p id="cv-msg" class="text-sm mb-4"></p>
+        <div id="cv-form" class="space-y-6"></div>
+      </div>
+    </section>
+
+    <!-- ══════════════ VARIANTES ══════════════ -->
+    <section id="tab-variants" class="hidden space-y-6">
+
+      <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+        <h2 class="font-bold mb-1">1 · Descripción de la vacante</h2>
+        <p class="text-xs text-slate-500 mb-3">La IA solo reordena y reescribe lo que ya está en tu CV; no puede añadir experiencia. Si falla, acorta la vacante dejando requisitos y responsabilidades.</p>
+        <textarea id="jd" rows="8" placeholder="Pega aquí la descripción del puesto…" class="fld font-mono"></textarea>
+        <div class="flex flex-wrap items-center gap-3 mt-3">
+          <button id="btn-gen" class="rounded-lg bg-brand-700 hover:bg-brand-800 disabled:opacity-50 text-white px-4 py-2 text-sm font-semibold">Generar borrador</button>
+          <button id="btn-blank" class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold hover:bg-slate-50">Crear a mano</button>
+          <span id="gen-msg" class="text-sm text-slate-500"></span>
+        </div>
+      </div>
+
+      <div id="review" class="hidden bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-4">
+        <div class="flex items-center justify-between gap-3">
+          <div>
+            <h2 class="font-bold">2 · Revisa antes de publicar</h2>
+            <p class="text-xs text-slate-500">El resumen es lo único que la IA redacta desde cero. Léelo con ojo crítico.</p>
+          </div>
+          <span id="editing-badge" class="hidden text-xs font-semibold bg-amber-100 text-amber-800 px-2 py-1 rounded"></span>
+        </div>
+
+        <div class="grid sm:grid-cols-3 gap-3">
+          <label class="block"><span class="lbl">Etiqueta interna</span><input id="f-label" class="fld mt-1"></label>
+          <label class="block"><span class="lbl">Empresa</span><input id="f-company" class="fld mt-1"></label>
+          <label class="block"><span class="lbl">Puesto</span><input id="f-role" class="fld mt-1"></label>
+        </div>
+
+        <div class="grid lg:grid-cols-2 gap-4">
+          <div class="space-y-3 border border-slate-200 rounded-lg p-3">
+            <h3 class="lbl">Español</h3>
+            <label class="block"><span class="lbl">Titular</span><input id="f-es-headline" class="fld mt-1"></label>
+            <label class="block"><span class="lbl">Resumen</span><textarea id="f-es-summary" rows="6" class="fld mt-1"></textarea></label>
+            <label class="block"><span class="lbl">Preguntas sugeridas (una por línea)</span><textarea id="f-es-sugg" rows="4" class="fld mt-1"></textarea></label>
+          </div>
+          <div class="space-y-3 border border-slate-200 rounded-lg p-3">
+            <h3 class="lbl">English</h3>
+            <label class="block"><span class="lbl">Headline</span><input id="f-en-headline" class="fld mt-1"></label>
+            <label class="block"><span class="lbl">Summary</span><textarea id="f-en-summary" rows="6" class="fld mt-1"></textarea></label>
+            <label class="block"><span class="lbl">Suggested questions (one per line)</span><textarea id="f-en-sugg" rows="4" class="fld mt-1"></textarea></label>
+          </div>
+        </div>
+
+        <label class="block"><span class="lbl">Enfoque para el chatbot</span>
+          <textarea id="f-focus" rows="3" class="fld mt-1"></textarea>
+          <span class="text-xs text-slate-500">Aquí conviene escribir también lo que la vacante pide y tú NO tienes: el bot lo dirá abiertamente en vez de insinuar que sí.</span>
+        </label>
+
+        <div>
+          <h3 class="lbl mb-2">Qué logros mostrar y en qué orden</h3>
+          <div id="f-bullets" class="space-y-3"></div>
+        </div>
+
+        <div>
+          <h3 class="lbl mb-2">Orden de los grupos de aptitudes</h3>
+          <div id="f-skills" class="flex flex-wrap gap-2"></div>
+        </div>
+
+        <div>
+          <h3 class="lbl mb-2">Badges</h3>
+          <div id="f-badges" class="flex flex-wrap gap-1.5"></div>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-3 pt-1">
+          <button id="btn-save" class="rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white px-4 py-2 text-sm font-semibold">Publicar variante</button>
+          <button id="btn-discard" class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold hover:bg-slate-50">Descartar</button>
+          <span id="save-msg" class="text-sm"></span>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+        <h2 class="font-bold mb-3">Variantes publicadas</h2>
+        <div id="list" class="space-y-2 text-sm"></div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+const $  = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) =>
+  ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+
+let token = sessionStorage.getItem('cv-admin-token') || '';
+let cvState = null;      // CV base en edición
+let variantState = null; // variante en edición
+let editingId = null;
+
+const api = (path, opts = {}) =>
+  fetch(path, { ...opts, headers: {
+    'content-type': 'application/json', authorization: 'Bearer ' + token, ...(opts.headers || {}) } });
+
+const uid = (p) => p + '-' + Math.random().toString(36).slice(2, 7);
+const lines = (el) => el.value.split('\n').map((s) => s.trim()).filter(Boolean);
+
+/* ══════════════ AUTENTICACIÓN ══════════════ */
+async function authenticate() {
+  token = $('#token').value.trim();
+  if (!token) return;
+  const msg = $('#auth-msg');
+  msg.textContent = 'Verificando…'; msg.className = 'text-sm mt-2 text-slate-500';
+
+  const res = await api('/api/admin/cv');
+  if (res.status === 401) { msg.textContent = 'Token incorrecto.'; msg.className = 'text-sm mt-2 text-red-600'; return; }
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    msg.textContent = err.error === 'kv_not_configured'
+      ? 'Falta crear el namespace KV VARIANTS y ponerlo en wrangler.toml.'
+      : 'Error del servidor: ' + (err.error || res.status);
+    msg.className = 'text-sm mt-2 text-red-600';
+    return;
+  }
+
+  sessionStorage.setItem('cv-admin-token', token);
+  $('#auth').classList.add('hidden');
+  $('#panel').classList.remove('hidden');
+  cvState = (await res.json()).cv;
+  renderCVForm();
+  refreshList();
+  showTab('cv');
+}
+$('#btn-auth').addEventListener('click', authenticate);
+$('#token').addEventListener('keydown', (e) => { if (e.key === 'Enter') authenticate(); });
+
+/* ══════════════ PESTAÑAS ══════════════ */
+function showTab(name) {
+  $('#tab-cv').classList.toggle('hidden', name !== 'cv');
+  $('#tab-variants').classList.toggle('hidden', name !== 'variants');
+  $$('.admin-tab').forEach((b) => {
+    const on = b.dataset.tab === name;
+    b.className = 'admin-tab px-4 py-2 text-sm font-semibold rounded-t-lg ' +
+      (on ? 'bg-white text-brand-800 border border-slate-300 border-b-white -mb-px' : 'text-slate-500 hover:text-slate-800');
+  });
+}
+$$('.admin-tab').forEach((b) => b.addEventListener('click', () => showTab(b.dataset.tab)));
+
+/* ══════════════ EDITOR DEL CV BASE ══════════════ */
+
+/** Escribe en cvState siguiendo una ruta tipo "experience.0.title.es". */
+function setPath(path, value) {
+  const parts = path.split('.');
+  let node = cvState;
+  for (let i = 0; i < parts.length - 1; i++) node = node[parts[i]];
+  node[parts[parts.length - 1]] = value;
+}
+
+const field = (path, value, label, type = 'input') => `
+  <label class="block">
+    <span class="lbl">${esc(label)}</span>
+    ${type === 'area'
+      ? `<textarea rows="5" class="fld mt-1" data-path="${path}">${esc(value)}</textarea>`
+      : `<input class="fld mt-1" data-path="${path}" value="${esc(value)}">`}
+  </label>`;
+
+function renderCVForm() {
+  const cv = cvState;
+  const box = (title, inner, extra = '') => `
+    <div class="border border-slate-200 rounded-lg p-4">
+      <div class="flex items-center justify-between mb-3"><h3 class="font-bold text-sm">${title}</h3>${extra}</div>
+      ${inner}
+    </div>`;
+
+  const jobs = cv.experience.map((j, ji) => `
+    <div class="border border-slate-200 rounded-lg p-3 bg-slate-50">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-xs font-mono text-slate-400">${esc(j.id)}</span>
+        <span class="flex gap-1">
+          <button class="btn-xs" data-move="experience" data-i="${ji}" data-d="-1">↑</button>
+          <button class="btn-xs" data-move="experience" data-i="${ji}" data-d="1">↓</button>
+          <button class="btn-xs danger" data-del="experience" data-i="${ji}">borrar</button>
+        </span>
+      </div>
+      <div class="grid sm:grid-cols-3 gap-2 mb-2">
+        ${field(`experience.${ji}.org`, j.org, 'Empresa')}
+        ${field(`experience.${ji}.dates.es`, j.dates.es, 'Fechas ES')}
+        ${field(`experience.${ji}.dates.en`, j.dates.en, 'Fechas EN')}
+      </div>
+      <div class="grid sm:grid-cols-2 gap-2 mb-2">
+        ${field(`experience.${ji}.title.es`, j.title.es, 'Puesto ES')}
+        ${field(`experience.${ji}.title.en`, j.title.en, 'Puesto EN')}
+        ${field(`experience.${ji}.place.es`, j.place.es, 'Lugar ES')}
+        ${field(`experience.${ji}.place.en`, j.place.en, 'Lugar EN')}
+      </div>
+      <div class="flex items-center justify-between mt-3 mb-1">
+        <span class="lbl">Logros</span>
+        <button class="btn-xs" data-add="bullet" data-i="${ji}">+ añadir logro</button>
+      </div>
+      ${j.bullets.map((b, bi) => `
+        <div class="border border-slate-200 rounded p-2 mb-2 bg-white">
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-xs font-mono text-slate-400">${esc(b.id)}</span>
+            <span class="flex gap-1">
+              <button class="btn-xs" data-bmove="${ji}" data-i="${bi}" data-d="-1">↑</button>
+              <button class="btn-xs" data-bmove="${ji}" data-i="${bi}" data-d="1">↓</button>
+              <button class="btn-xs danger" data-bdel="${ji}" data-i="${bi}">borrar</button>
+            </span>
+          </div>
+          <textarea rows="2" class="fld mb-1" data-path="experience.${ji}.bullets.${bi}.es" placeholder="Español">${esc(b.es)}</textarea>
+          <textarea rows="2" class="fld" data-path="experience.${ji}.bullets.${bi}.en" placeholder="English">${esc(b.en)}</textarea>
+        </div>`).join('')}
+    </div>`).join('');
+
+  const skills = cv.skills.map((g, gi) => `
+    <div class="border border-slate-200 rounded-lg p-3 bg-slate-50">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-xs font-mono text-slate-400">${esc(g.id)}</span>
+        <span class="flex gap-1">
+          <button class="btn-xs" data-move="skills" data-i="${gi}" data-d="-1">↑</button>
+          <button class="btn-xs" data-move="skills" data-i="${gi}" data-d="1">↓</button>
+          <button class="btn-xs danger" data-del="skills" data-i="${gi}">borrar</button>
+        </span>
+      </div>
+      <div class="grid sm:grid-cols-2 gap-2 mb-2">
+        ${field(`skills.${gi}.label.es`, g.label.es, 'Nombre ES')}
+        ${field(`skills.${gi}.label.en`, g.label.en, 'Nombre EN')}
+      </div>
+      <label class="block"><span class="lbl">Items (uno por línea)</span>
+        <textarea rows="3" class="fld mt-1" data-list="skills.${gi}.items">${esc(g.items.join('\n'))}</textarea></label>
+    </div>`).join('');
+
+  const metrics = cv.metrics.map((m, mi) => `
+    <div class="grid grid-cols-3 gap-2">
+      ${field(`metrics.${mi}.value`, m.value, 'Valor')}
+      ${field(`metrics.${mi}.es`, m.es, 'Texto ES')}
+      ${field(`metrics.${mi}.en`, m.en, 'Texto EN')}
+    </div>`).join('');
+
+  $('#cv-form').innerHTML = [
+    box('Datos de contacto', `
+      <div class="grid sm:grid-cols-2 gap-3">
+        ${field('name', cv.name, 'Nombre completo')}
+        ${field('email', cv.email, 'Email')}
+        ${field('phone', cv.phone, 'Teléfono')}
+        ${field('linkedin', cv.linkedin, 'URL de LinkedIn')}
+        ${field('linkedinLabel', cv.linkedinLabel, 'LinkedIn como texto (para el PDF)')}
+        ${field('location.es', cv.location.es, 'Ubicación ES')}
+        ${field('location.en', cv.location.en, 'Ubicación EN')}
+      </div>`),
+
+    box('Titular y perfil', `
+      <div class="grid sm:grid-cols-2 gap-3 mb-3">
+        ${field('headline.es', cv.headline.es, 'Titular ES')}
+        ${field('headline.en', cv.headline.en, 'Titular EN')}
+      </div>
+      <div class="grid lg:grid-cols-2 gap-3">
+        ${field('summary.es', cv.summary.es, 'Perfil ES', 'area')}
+        ${field('summary.en', cv.summary.en, 'Perfil EN', 'area')}
+      </div>`),
+
+    box('Métricas destacadas', `<div class="space-y-2">${metrics}</div>`),
+
+    box('Experiencia', `<div class="space-y-3">${jobs}</div>`,
+        '<button class="btn-xs" data-add="job">+ añadir empleo</button>'),
+
+    box('Aptitudes', `<div class="space-y-3">${skills}</div>`,
+        '<button class="btn-xs" data-add="skill">+ añadir grupo</button>'),
+
+    box('Educación, certificaciones e idiomas', `
+      <div class="grid sm:grid-cols-2 gap-3 mb-3">
+        ${field('education.degree.es', cv.education.degree.es, 'Titulación ES')}
+        ${field('education.degree.en', cv.education.degree.en, 'Titulación EN')}
+        ${field('education.school', cv.education.school, 'Institución')}
+      </div>
+      <div class="grid sm:grid-cols-3 gap-3">
+        <label class="block"><span class="lbl">Certificaciones (una por línea)</span>
+          <textarea rows="3" class="fld mt-1" data-list="certs">${esc(cv.certs.join('\n'))}</textarea></label>
+        <label class="block"><span class="lbl">Idiomas ES (uno por línea)</span>
+          <textarea rows="3" class="fld mt-1" data-list="languages.es">${esc(cv.languages.es.join('\n'))}</textarea></label>
+        <label class="block"><span class="lbl">Idiomas EN (uno por línea)</span>
+          <textarea rows="3" class="fld mt-1" data-list="languages.en">${esc(cv.languages.en.join('\n'))}</textarea></label>
+      </div>`),
+
+    box('Badges del encabezado', `
+      <label class="block"><span class="lbl">Uno por línea</span>
+        <textarea rows="4" class="fld mt-1" data-list="badges">${esc(cv.badges.join('\n'))}</textarea></label>`),
+  ].join('');
+}
+
+// Cada tecla escribe directamente en el estado: no hace falta "aplicar".
+$('#cv-form').addEventListener('input', (e) => {
+  const el = e.target;
+  if (el.dataset.path) setPath(el.dataset.path, el.value);
+  else if (el.dataset.list) setPath(el.dataset.list, el.value.split('\n').map((s) => s.trim()).filter(Boolean));
+});
+
+$('#cv-form').addEventListener('click', (e) => {
+  const b = e.target.closest('button');
+  if (!b) return;
+  e.preventDefault();
+  const i = Number(b.dataset.i);
+
+  if (b.dataset.add === 'job') {
+    cvState.experience.push({ id: uid('job'), org: '', title:{es:'',en:''}, place:{es:'',en:''},
+                              dates:{es:'',en:''}, bullets:[{ id: uid('b'), es:'', en:'' }] });
+  } else if (b.dataset.add === 'skill') {
+    cvState.skills.push({ id: uid('skill'), label:{es:'',en:''}, items:[] });
+  } else if (b.dataset.add === 'bullet') {
+    cvState.experience[i].bullets.push({ id: uid('b'), es:'', en:'' });
+  } else if (b.dataset.move) {
+    const arr = cvState[b.dataset.move];
+    const j = i + Number(b.dataset.d);
+    if (j < 0 || j >= arr.length) return;
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  } else if (b.dataset.del) {
+    if (!confirm('¿Borrar? Las variantes que lo destacaran dejarán de mostrarlo.')) return;
+    cvState[b.dataset.del].splice(i, 1);
+  } else if (b.dataset.bmove) {
+    const arr = cvState.experience[Number(b.dataset.bmove)].bullets;
+    const j = i + Number(b.dataset.d);
+    if (j < 0 || j >= arr.length) return;
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  } else if (b.dataset.bdel) {
+    if (!confirm('¿Borrar este logro?')) return;
+    cvState.experience[Number(b.dataset.bdel)].bullets.splice(i, 1);
+  } else return;
+
+  renderCVForm();
+});
+
+$('#cv-save').addEventListener('click', async () => {
+  const msg = $('#cv-msg');
+  $('#cv-save').disabled = true;
+  msg.textContent = 'Guardando…'; msg.className = 'text-sm text-slate-500 mb-4';
+  try {
+    const res = await api('/api/admin/cv', { method: 'PUT', body: JSON.stringify({ cv: cvState }) });
+    const data = await res.json();
+    if (!res.ok) { msg.textContent = 'Error: ' + (data.error || res.status); msg.className = 'text-sm text-red-600 mb-4'; return; }
+    cvState = data.cv;
+    renderCVForm();
+    if (data.stale?.length) {
+      msg.innerHTML = 'CV guardado. <b>Aviso:</b> estas variantes referenciaban algo que ya no existe y lo omitirán: ' +
+        data.stale.map((v) => esc(v.label || v.id)).join(', ') + '.';
+      msg.className = 'text-sm text-amber-700 mb-4';
+    } else {
+      msg.textContent = 'CV guardado. Ya está en vivo.';
+      msg.className = 'text-sm text-emerald-700 mb-4';
+    }
+  } catch (e) {
+    msg.textContent = 'Error de red: ' + e.message; msg.className = 'text-sm text-red-600 mb-4';
+  } finally { $('#cv-save').disabled = false; }
+});
+
+$('#cv-reset').addEventListener('click', async () => {
+  if (!confirm('Se descarta el CV guardado y vuelve el original del repositorio. ¿Seguro?')) return;
+  const res = await api('/api/admin/cv', { method: 'DELETE' });
+  if (res.ok) { cvState = (await res.json()).cv; renderCVForm(); $('#cv-msg').textContent = 'Restaurado el CV original.'; }
+});
+
+/* ══════════════ VARIANTES ══════════════ */
+$('#btn-gen').addEventListener('click', async () => {
+  const jd = $('#jd').value.trim();
+  const msg = $('#gen-msg');
+  if (jd.length < 60) { msg.textContent = 'Pega una descripción más larga (mínimo 60 caracteres).'; return; }
+
+  $('#btn-gen').disabled = true;
+  msg.textContent = 'Generando… puede tardar hasta 30 segundos.';
+  try {
+    const res = await api('/api/admin/generate', { method: 'POST', body: JSON.stringify({ jobDescription: jd }) });
+    const data = await res.json();
+    if (!res.ok) {
+      msg.textContent = data.error === 'unparseable_model_output'
+        ? 'El modelo no devolvió JSON válido en 3 intentos. Prueba a acortar la vacante, o pulsa «Crear a mano».'
+        : data.error === 'ai_unavailable'
+          ? 'Workers AI no responde. Puede ser la cuota diaria; revísala en el panel de Cloudflare.'
+          : 'Error: ' + (data.error || res.status);
+      return;
+    }
+    openVariant(data.draft, null);
+    msg.textContent = data.attempts > 1 ? `Borrador listo (${data.attempts} intentos).` : 'Borrador listo.';
+  } catch (e) { msg.textContent = 'Error de red: ' + e.message; }
+  finally { $('#btn-gen').disabled = false; }
+});
+
+$('#btn-blank').addEventListener('click', () => {
+  openVariant({ label:'', company:'', role:'', focus:'',
+                es:{headline:'',summary:'',suggestions:[]},
+                en:{headline:'',summary:'',suggestions:[]} }, null);
+  $('#gen-msg').textContent = 'Variante en blanco: rellénala a mano.';
+});
+
+/** Carga una variante (nueva o existente) en el formulario de revisión. */
+function openVariant(v, id) {
+  variantState = v;
+  editingId = id;
+  $('#f-label').value = v.label || '';
+  $('#f-company').value = v.company || '';
+  $('#f-role').value = v.role || '';
+  $('#f-focus').value = v.focus || '';
+  for (const l of ['es', 'en']) {
+    $(`#f-${l}-headline`).value = v[l]?.headline || '';
+    $(`#f-${l}-summary`).value = v[l]?.summary || '';
+    $(`#f-${l}-sugg`).value = (v[l]?.suggestions || []).join('\n');
+  }
+  renderVariantSelectors();
+  const badge = $('#editing-badge');
+  badge.classList.toggle('hidden', !id);
+  if (id) badge.textContent = 'Editando ' + id;
+  $('#review').classList.remove('hidden');
+  $('#save-msg').textContent = '';
+  $('#review').scrollIntoView({ behavior: 'smooth' });
+}
+
+/**
+ * Selectores de logros, skills y badges construidos desde el CV base, para que
+ * solo se pueda elegir entre lo que realmente existe.
+ */
+function renderVariantSelectors() {
+  const order = variantState.bulletOrder || {};
+
+  $('#f-bullets').innerHTML = cvState.experience.map((j) => {
+    const chosen = order[j.id];
+    const ordered = chosen
+      ? [...chosen.map((id) => j.bullets.find((b) => b.id === id)).filter(Boolean),
+         ...j.bullets.filter((b) => !chosen.includes(b.id))]
+      : j.bullets;
+    return `
+      <div class="border border-slate-200 rounded-lg p-3 bg-slate-50">
+        <div class="font-semibold text-sm mb-2">${esc(j.title.es || j.title.en)} · ${esc(j.org)}</div>
+        ${ordered.map((b, i) => {
+          const on = !chosen || chosen.includes(b.id);
+          return `
+          <div class="flex items-start gap-2 mb-1.5">
+            <input type="checkbox" class="mt-1" data-bullet="${esc(j.id)}" data-bid="${esc(b.id)}" ${on ? 'checked' : ''}>
+            <span class="flex-1 text-xs ${on ? '' : 'text-slate-400 line-through'}">${esc((b.es || b.en).slice(0, 130))}</span>
+            <span class="flex gap-1 shrink-0">
+              <button class="btn-xs" data-vmove="${esc(j.id)}" data-bid="${esc(b.id)}" data-d="-1">↑</button>
+              <button class="btn-xs" data-vmove="${esc(j.id)}" data-bid="${esc(b.id)}" data-d="1">↓</button>
+            </span>
+          </div>`;
+        }).join('')}
+      </div>`;
+  }).join('');
+
+  const so = variantState.skillOrder?.length ? variantState.skillOrder : cvState.skills.map((s) => s.id);
+  const ordered = [...so.map((id) => cvState.skills.find((s) => s.id === id)).filter(Boolean),
+                   ...cvState.skills.filter((s) => !so.includes(s.id))];
+  $('#f-skills').innerHTML = ordered.map((g, i) => `
+    <span class="inline-flex items-center gap-1 border border-slate-300 rounded-lg px-2 py-1 text-xs bg-white">
+      <b>${i + 1}.</b> ${esc(g.label.es || g.label.en)}
+      <button class="btn-xs" data-smove="${esc(g.id)}" data-d="-1">↑</button>
+      <button class="btn-xs" data-smove="${esc(g.id)}" data-d="1">↓</button>
+    </span>`).join('');
+
+  const all = [...new Set([...cvState.badges, ...cvState.skills.flatMap((s) => s.items)])];
+  const chosen = variantState.badges?.length ? variantState.badges : cvState.badges;
+  $('#f-badges').innerHTML = all.map((b) => `
+    <label class="inline-flex items-center gap-1 border rounded-full px-2 py-1 text-xs cursor-pointer ${
+      chosen.includes(b) ? 'bg-brand-50 border-brand-300 text-brand-800' : 'border-slate-300 text-slate-500'}">
+      <input type="checkbox" class="hidden" data-badge="${esc(b)}" ${chosen.includes(b) ? 'checked' : ''}>${esc(b)}
+    </label>`).join('');
+}
+
+$('#review').addEventListener('change', (e) => {
+  const el = e.target;
+  if (el.dataset.bullet) {
+    const jobId = el.dataset.bullet;
+    const job = cvState.experience.find((j) => j.id === jobId);
+    variantState.bulletOrder = variantState.bulletOrder || {};
+    let cur = variantState.bulletOrder[jobId] || job.bullets.map((b) => b.id);
+    cur = el.checked ? [...cur, el.dataset.bid] : cur.filter((id) => id !== el.dataset.bid);
+    // Se respeta el orden visual actual
+    const visual = $$(`[data-bullet="${jobId}"]`, $('#f-bullets')).map((c) => c.dataset.bid);
+    variantState.bulletOrder[jobId] = visual.filter((id) => cur.includes(id));
+    renderVariantSelectors();
+  } else if (el.dataset.badge) {
+    const all = [...new Set([...cvState.badges, ...cvState.skills.flatMap((s) => s.items)])];
+    const chosen = new Set(variantState.badges?.length ? variantState.badges : cvState.badges);
+    el.checked ? chosen.add(el.dataset.badge) : chosen.delete(el.dataset.badge);
+    variantState.badges = all.filter((b) => chosen.has(b));
+    renderVariantSelectors();
+  }
+});
+
+$('#review').addEventListener('click', (e) => {
+  const b = e.target.closest('button');
+  if (!b) return;
+
+  if (b.dataset.vmove) {
+    e.preventDefault();
+    const jobId = b.dataset.vmove;
+    const job = cvState.experience.find((j) => j.id === jobId);
+    variantState.bulletOrder = variantState.bulletOrder || {};
+    const cur = [...($$(`[data-bullet="${jobId}"]`, $('#f-bullets')).map((c) => c.dataset.bid))];
+    const i = cur.indexOf(b.dataset.bid);
+    const j = i + Number(b.dataset.d);
+    if (i < 0 || j < 0 || j >= cur.length) return;
+    [cur[i], cur[j]] = [cur[j], cur[i]];
+    const active = new Set(variantState.bulletOrder[jobId] || job.bullets.map((x) => x.id));
+    variantState.bulletOrder[jobId] = cur.filter((id) => active.has(id));
+    renderVariantSelectors();
+  } else if (b.dataset.smove) {
+    e.preventDefault();
+    const cur = variantState.skillOrder?.length ? [...variantState.skillOrder] : cvState.skills.map((s) => s.id);
+    const i = cur.indexOf(b.dataset.smove);
+    const j = i + Number(b.dataset.d);
+    if (i < 0 || j < 0 || j >= cur.length) return;
+    [cur[i], cur[j]] = [cur[j], cur[i]];
+    variantState.skillOrder = cur;
+    renderVariantSelectors();
+  }
+});
+
+$('#btn-save').addEventListener('click', async () => {
+  const variant = {
+    ...variantState,
+    label: $('#f-label').value, company: $('#f-company').value,
+    role: $('#f-role').value, focus: $('#f-focus').value,
+    es: { headline: $('#f-es-headline').value, summary: $('#f-es-summary').value, suggestions: lines($('#f-es-sugg')) },
+    en: { headline: $('#f-en-headline').value, summary: $('#f-en-summary').value, suggestions: lines($('#f-en-sugg')) },
+  };
+  const msg = $('#save-msg');
+  $('#btn-save').disabled = true;
+  msg.textContent = 'Guardando…'; msg.className = 'text-sm text-slate-500';
+  try {
+    const res = await api('/api/admin/variant', { method: 'POST', body: JSON.stringify({ variant, id: editingId || undefined }) });
+    const data = await res.json();
+    if (!res.ok) { msg.textContent = 'Error: ' + (data.error || res.status); msg.className = 'text-sm text-red-600'; return; }
+    msg.innerHTML = `Publicada: <a href="${esc(data.url)}" target="_blank" class="text-brand-700 font-semibold underline">${esc(data.url)}</a>`;
+    msg.className = 'text-sm text-emerald-700';
+    editingId = data.saved.id;
+    $('#editing-badge').classList.remove('hidden');
+    $('#editing-badge').textContent = 'Editando ' + editingId;
+    refreshList();
+  } catch (e) { msg.textContent = 'Error de red: ' + e.message; msg.className = 'text-sm text-red-600'; }
+  finally { $('#btn-save').disabled = false; }
+});
+
+$('#btn-discard').addEventListener('click', () => {
+  variantState = null; editingId = null;
+  $('#review').classList.add('hidden');
+});
+
+/* ══════════════ LISTADO ══════════════ */
+async function refreshList() {
+  const res = await api('/api/admin/variants');
+  if (!res.ok) return;
+  const variants = (await res.json()).variants;
+  const list = $('#list');
+  if (!variants?.length) { list.innerHTML = '<p class="text-slate-500">Todavía no hay variantes.</p>'; return; }
+  list.innerHTML = variants.map((v) => `
+    <div class="flex flex-wrap items-center gap-2 justify-between border border-slate-200 rounded-lg px-3 py-2">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">${esc(v.label || v.id)}</div>
+        <div class="text-xs text-slate-500">${esc(v.company || '')} · ${new Date(v.updatedAt).toLocaleString()}</div>
+      </div>
+      <div class="flex items-center gap-2 shrink-0">
+        <a href="/v/${esc(v.id)}" target="_blank" class="text-brand-700 font-semibold hover:underline">abrir</a>
+        <button data-edit="${esc(v.id)}" class="text-brand-700 font-semibold hover:underline">editar</button>
+        <button data-copy="/v/${esc(v.id)}" class="text-slate-600 hover:underline">copiar link</button>
+        <button data-del="${esc(v.id)}" class="text-red-600 hover:underline">borrar</button>
+      </div>
+    </div>`).join('');
+}
+
+$('#list').addEventListener('click', async (e) => {
+  const edit = e.target.closest('[data-edit]');
+  if (edit) {
+    const res = await api('/api/admin/variant/' + edit.dataset.edit);
+    if (res.ok) openVariant((await res.json()).variant, edit.dataset.edit);
+    return;
+  }
+  const copy = e.target.closest('[data-copy]');
+  if (copy) {
+    await navigator.clipboard.writeText(location.origin + copy.dataset.copy);
+    copy.textContent = '¡copiado!';
+    setTimeout(() => { copy.textContent = 'copiar link'; }, 1500);
+    return;
+  }
+  const del = e.target.closest('[data-del]');
+  if (del && confirm('¿Borrar esta variante? El link dejará de funcionar.')) {
+    await api('/api/admin/variant/' + del.dataset.del, { method: 'DELETE' });
+    refreshList();
+  }
+});
+
+/* ══════════════ ARRANQUE ══════════════ */
+if (token) { $('#token').value = token; authenticate(); }
+</script>
+</body>
+</html>

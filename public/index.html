@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CV Interactivo — Technical Lead</title>
+<meta name="description" content="CV interactivo bilingüe con chatbot de IA. Pregúntale al asistente sobre la experiencia y el stack técnico.">
+<meta name="author" content="Tu Nombre">
+<meta name="theme-color" content="#1e3a8a">
+
+<meta property="og:type" content="profile">
+<meta property="og:title" content="CV Interactivo — Technical Lead">
+<meta property="og:description" content="CV interactivo con asistente de IA. Ask the AI about his experience.">
+
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%231e3a8a'/><text x='50' y='68' font-size='52' font-family='sans-serif' font-weight='700' fill='%23fff' text-anchor='middle'>FL</text></svg>">
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  darkMode: 'class',
+  theme: {
+    extend: {
+      colors: {
+        brand: {
+          50:'#eef2ff',100:'#e0e7ff',200:'#c7d2fe',300:'#a5b4fc',400:'#818cf8',
+          500:'#6366f1',600:'#4f46e5',700:'#4338ca',800:'#3730a3',900:'#1e3a8a'
+        }
+      },
+      fontFamily: { sans: ['Inter','system-ui','-apple-system','Segoe UI','Roboto','sans-serif'] },
+      keyframes: {
+        fadeUp: { '0%':{opacity:0,transform:'translateY(8px)'}, '100%':{opacity:1,transform:'translateY(0)'} },
+        blink:  { '0%,80%,100%':{opacity:.25}, '40%':{opacity:1} }
+      },
+      animation: { fadeUp:'fadeUp .28s ease-out both', blink:'blink 1.2s infinite' }
+    }
+  }
+}
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.2/dist/html2pdf.bundle.min.js"></script>
+
+<style>
+  html { -webkit-text-size-adjust: 100%; }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-thumb { background: rgba(120,120,140,.35); border-radius: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+
+  /* --- Markdown dentro de las burbujas del chat --- */
+  .md > *:first-child { margin-top: 0; }
+  .md > *:last-child  { margin-bottom: 0; }
+  .md p { margin: .5rem 0; }
+  .md ul, .md ol { margin: .5rem 0; padding-left: 1.15rem; }
+  .md ul { list-style: disc; }
+  .md ol { list-style: decimal; }
+  .md li { margin: .2rem 0; }
+  .md strong { font-weight: 700; }
+  .md h1, .md h2, .md h3 { font-weight: 700; margin: .7rem 0 .35rem; font-size: 1rem; }
+  .md code { background: rgba(127,127,127,.18); padding: .1rem .3rem; border-radius: .25rem; font-size: .875em; }
+  .md pre { background: rgba(127,127,127,.18); padding: .6rem; border-radius: .5rem; overflow-x: auto; margin: .5rem 0; }
+  .md pre code { background: none; padding: 0; }
+  .md a { text-decoration: underline; text-underline-offset: 2px; }
+
+  /* ================================================================
+     DOCUMENTO PDF / IMPRESIÓN
+     Estilos planos (hex, sin oklch) para que html2canvas los rasterice bien.
+     ================================================================ */
+  /* El desplazamiento fuera de pantalla va en el WRAPPER, no en #print-doc.
+     html2pdf clona el nodo copiando sus estilos de posición: si #print-doc
+     estuviera posicionado, quedaría fuera del contenedor de render y el PDF
+     saldría en blanco (canvas de 794x0). #print-doc debe ir en flujo normal. */
+  #print-wrap {
+    position: absolute; left: -10000px; top: 0;
+    width: 794px; background: #ffffff;
+  }
+  #print-doc {
+    width: 794px;                 /* A4 @ 96dpi */
+    padding: 46px 54px 40px;
+    background: #ffffff; color: #1f2933;
+    font-family: Inter, Arial, Helvetica, sans-serif;
+    font-size: 11.2px; line-height: 1.5;
+  }
+  #print-doc .p-name { font-size: 27px; font-weight: 800; color: #111827; text-align: center; letter-spacing: -.3px; }
+  #print-doc .p-role { font-size: 14px; color: #3730a3; text-align: center; margin-top: 3px; }
+  #print-doc .p-contact { font-size: 10.4px; color: #4b5563; text-align: center; margin-top: 8px; }
+  #print-doc .p-contact span { white-space: nowrap; }
+  #print-doc .p-sec { font-size: 11.5px; font-weight: 700; color: #3730a3; letter-spacing: .9px;
+                      text-transform: uppercase; margin: 17px 0 6px;
+                      border-bottom: 1.6px solid #3730a3; padding-bottom: 3px; }
+  #print-doc .p-sum { text-align: justify; }
+  #print-doc .p-job { margin-top: 10px; page-break-inside: avoid; }
+  #print-doc .p-job-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+  #print-doc .p-job-title { font-size: 12.6px; font-weight: 700; color: #111827; }
+  #print-doc .p-job-dates { font-size: 10.2px; color: #6b7280; white-space: nowrap; }
+  #print-doc .p-job-org { font-size: 11px; color: #4338ca; margin-top: 1px; }
+  #print-doc .p-job ul { margin: 5px 0 0; padding-left: 15px; list-style: disc; }
+  #print-doc .p-job li { margin: 2.5px 0; }
+  #print-doc .p-row { margin: 3px 0; }
+  #print-doc .p-row b { color: #111827; }
+  #print-doc .p-muted { color: #4b5563; }
+
+  /* Fallback: Ctrl+P imprime el mismo documento */
+  @media print {
+    body > *:not(#print-wrap) { display: none !important; }
+    #print-wrap { position: static !important; left: 0 !important; width: auto !important; }
+    #print-doc { width: auto !important; padding: 0 !important; }
+    @page { size: A4; margin: 14mm 15mm; }
+  }
+</style>
+</head>
+
+<body class="bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-200 font-sans antialiased transition-colors">
+
+<!-- ══════════════════ BARRA SUPERIOR ══════════════════ -->
+<header class="sticky top-0 z-40 backdrop-blur bg-white/80 dark:bg-slate-950/80 border-b border-slate-200 dark:border-slate-800">
+  <div class="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
+    <div class="flex items-center gap-2 min-w-0">
+      <div class="w-8 h-8 rounded-lg bg-brand-900 text-white grid place-items-center text-xs font-bold shrink-0">FL</div>
+      <span class="font-semibold truncate hidden sm:block">Tu Nombre</span>
+    </div>
+
+    <div class="flex items-center gap-2">
+      <!-- Selector de idioma -->
+      <div role="group" aria-label="Language / Idioma"
+           class="flex rounded-lg border border-slate-300 dark:border-slate-700 overflow-hidden text-sm font-semibold">
+        <button type="button" data-lang-btn="es" class="px-3 py-1.5 transition-colors">ES</button>
+        <button type="button" data-lang-btn="en" class="px-3 py-1.5 transition-colors border-l border-slate-300 dark:border-slate-700">EN</button>
+      </div>
+
+      <button type="button" id="theme-toggle" aria-label="Theme"
+              class="w-9 h-9 grid place-items-center rounded-lg border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+        <svg class="w-4 h-4 dark:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+        <svg class="w-4 h-4 hidden dark:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/></svg>
+      </button>
+
+      <button type="button" id="btn-pdf"
+              class="inline-flex items-center gap-2 rounded-lg bg-brand-700 hover:bg-brand-800 disabled:opacity-60 text-white px-3 py-2 text-sm font-semibold shadow-sm transition-colors">
+        <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+        <span data-i18n="pdfBtn" class="hidden sm:inline"></span>
+        <span class="sm:hidden">PDF</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main class="max-w-6xl mx-auto px-4 py-8 space-y-8">
+
+  <!-- ══════════════════ HERO ══════════════════ -->
+  <section class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+    <div class="h-24 bg-gradient-to-r from-brand-900 via-brand-700 to-brand-500"></div>
+    <div class="px-6 pb-6">
+      <div class="flex flex-col gap-4">
+        <!-- Solo el avatar invade el degradado; el texto queda debajo para no
+             perder contraste sobre el fondo azul. -->
+        <div class="w-24 h-24 -mt-12 rounded-2xl ring-4 ring-white dark:ring-slate-900 bg-brand-900 text-white grid place-items-center text-3xl font-extrabold shrink-0 overflow-hidden">
+          <!-- Ruta absoluta: en /v/:id una relativa resolvería a /v/avatar.jpg -->
+          <img src="/avatar.jpg" alt="Foto de perfil" class="w-full h-full object-cover"
+               onerror="const p=this.parentElement; this.remove(); p.textContent='FL';">
+        </div>
+        <div class="flex-1 min-w-0">
+          <h1 id="cv-name" class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white"></h1>
+          <p data-i18n="headline" class="text-brand-700 dark:text-brand-300 font-semibold mt-0.5"></p>
+          <p class="text-sm text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-1.5">
+            <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 1116 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            <span data-i18n="location"></span>
+          </p>
+        </div>
+      </div>
+
+      <!-- Contacto (se rellena desde /api/cv) -->
+      <div id="contact" class="flex flex-wrap gap-2 mt-5"></div>
+
+      <!-- Badges -->
+      <div id="badges" class="flex flex-wrap gap-1.5 mt-5"></div>
+
+      <!-- Métricas (se rellenan desde /api/cv) -->
+      <div id="metrics" class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6"></div>
+
+      <p id="summary" class="mt-6 text-[15px] leading-relaxed text-slate-600 dark:text-slate-300"></p>
+    </div>
+  </section>
+
+  <!-- ══════════════════ CONTENIDO + CHAT ══════════════════ -->
+  <div class="grid lg:grid-cols-2 gap-8 items-start">
+
+    <!-- ---------- Pestañas ---------- -->
+    <section class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+      <div role="tablist" class="flex border-b border-slate-200 dark:border-slate-800 px-2 pt-2 gap-1 overflow-x-auto">
+        <button role="tab" data-tab="exp"   data-i18n="tabExp"   class="tab-btn px-4 py-2.5 text-sm font-semibold rounded-t-lg whitespace-nowrap transition-colors"></button>
+        <button role="tab" data-tab="skills" data-i18n="tabSkills" class="tab-btn px-4 py-2.5 text-sm font-semibold rounded-t-lg whitespace-nowrap transition-colors"></button>
+        <button role="tab" data-tab="edu"   data-i18n="tabEdu"   class="tab-btn px-4 py-2.5 text-sm font-semibold rounded-t-lg whitespace-nowrap transition-colors"></button>
+      </div>
+      <div id="tab-panels" class="p-5 sm:p-6"></div>
+    </section>
+
+    <!-- ---------- Chat ---------- -->
+    <section class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col lg:sticky lg:top-20 overflow-hidden">
+      <div class="flex items-center gap-3 px-5 py-4 border-b border-slate-200 dark:border-slate-800">
+        <div class="relative shrink-0">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-600 to-brand-900 text-white grid place-items-center">
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 4.6L18.5 9l-4.6 1.9L12 15l-1.9-4.1L5.5 9l4.6-1.4z"/><path d="M18 15l.8 2.2L21 18l-2.2.8L18 21l-.8-2.2L15 18l2.2-.8z"/></svg>
+          </div>
+          <span class="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-slate-900"></span>
+        </div>
+        <div class="min-w-0">
+          <h2 data-i18n="chatTitle" class="font-bold text-slate-900 dark:text-white leading-tight"></h2>
+          <p data-i18n="chatSub" class="text-xs text-slate-500 dark:text-slate-400"></p>
+        </div>
+      </div>
+
+      <div id="chat-log" class="flex-1 overflow-y-auto px-5 py-4 space-y-4 min-h-[340px] max-h-[52vh]" aria-live="polite"></div>
+
+      <div id="suggestions" class="px-5 pb-3 flex flex-wrap gap-2"></div>
+
+      <form id="chat-form" class="border-t border-slate-200 dark:border-slate-800 p-3 flex items-end gap-2">
+        <textarea id="chat-input" rows="1" maxlength="800" autocomplete="off"
+          class="flex-1 resize-none max-h-32 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent placeholder:text-slate-400"></textarea>
+        <button type="submit" id="chat-send" aria-label="Send"
+          class="shrink-0 w-11 h-11 grid place-items-center rounded-xl bg-brand-700 hover:bg-brand-800 disabled:opacity-40 disabled:cursor-not-allowed text-white transition-colors">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg>
+        </button>
+      </form>
+      <p data-i18n="disclaimer" class="px-5 pb-3 text-[11px] text-slate-400 dark:text-slate-500 text-center"></p>
+    </section>
+  </div>
+
+  <footer class="text-center text-xs text-slate-400 dark:text-slate-500 pt-2 pb-6">
+    <span data-i18n="footer"></span>
+  </footer>
+</main>
+
+<!-- Documento que se convierte a PDF (fuera de pantalla) -->
+<div id="print-wrap" aria-hidden="true"><div id="print-doc"></div></div>
+
+<script>
+/* ==================================================================
+   1. DATOS DEL CV (bilingüe) — única fuente de verdad del frontend
+   ================================================================== */
+/* ==================================================================
+   1. CV BASE
+   La fuente de verdad vive en KV y se sirve por /api/cv. Aquí solo queda la
+   proyección a un idioma y la aplicación de la variante encima.
+   ================================================================== */
+let baseCV = null;   // se rellena en el arranque
+
+const SECTIONS = {
+  es: { sum:'PERFIL PROFESIONAL', exp:'EXPERIENCIA', skills:'APTITUDES',
+        edu:'EDUCACIÓN', certs:'CERTIFICACIONES', lang:'IDIOMAS' },
+  en: { sum:'PROFESSIONAL SUMMARY', exp:'EXPERIENCE', skills:'SKILLS',
+        edu:'EDUCATION', certs:'CERTIFICATIONS', lang:'LANGUAGES' }
+};
+
+/** Aplana el CV bilingüe a un solo idioma, conservando los ids. */
+function project(base, l) {
+  return {
+    name: base.name,
+    email: base.email,
+    phone: base.phone,
+    linkedin: base.linkedin,
+    linkedinLabel: base.linkedinLabel,
+    location: base.location[l],
+    headline: base.headline[l],
+    summary: base.summary[l],
+    experience: base.experience.map((j) => ({
+      id: j.id, org: j.org, title: j.title[l], place: j.place[l], dates: j.dates[l],
+      bullets: j.bullets.map((b) => ({ id: b.id, text: b[l] })).filter((b) => b.text)
+    })),
+    skills: base.skills.map((g) => ({ id: g.id, label: g.label[l], items: g.items })),
+    education: { degree: base.education.degree[l], school: base.education.school },
+    certs: base.certs,
+    languages: base.languages[l],
+    metrics: base.metrics.map((m) => ({ value: m.value, label: m[l] })),
+    secSum: SECTIONS[l].sum, secExp: SECTIONS[l].exp, secSkills: SECTIONS[l].skills,
+    secEdu: SECTIONS[l].edu, secCerts: SECTIONS[l].certs, secLang: SECTIONS[l].lang
+  };
+}
+
+/* ==================================================================
+   2. CADENAS DE INTERFAZ
+   ================================================================== */
+const UI = {
+  es: {
+    pdfBtn: 'Descargar CV',
+    tabExp: 'Experiencia', tabSkills: 'Aptitudes', tabEdu: 'Educación',
+    mYears: 'años de experiencia', mTeam: 'ingenieros liderados',
+    mTesting: 'tiempo de testing', mLoad: 'carga de módulos críticos',
+    chatTitle: 'Pregúntale a mi CV', chatSub: 'Asistente de IA · responde en tu idioma',
+    placeholder: 'Escribe tu pregunta…',
+    greeting: '¡Hola! 👋 Soy el asistente de IA de este CV. Puedes preguntarme sobre la experiencia, el stack técnico, cómo se aplica IA en desarrollo o si encaja con una vacante. Escríbeme en **español o inglés** — respondo en el idioma que uses.',
+    typing: 'Escribiendo',
+    disclaimer: 'Respuestas generadas con IA a partir del CV. Pueden contener imprecisiones.',
+    footer: 'Construido con Cloudflare Workers AI · Llama 3.3',
+    errNetwork: 'No pude conectar con el asistente. Revisa tu conexión e inténtalo de nuevo.',
+    errEmpty: 'No obtuve respuesta del modelo. Intenta reformular la pregunta.',
+    pdfName: 'CV_ES.pdf',
+    pdfWorking: 'Generando…',
+    suggestions: [
+      '¿Cómo aplica la IA en su día a día?',
+      '¿Qué experiencia tiene liderando equipos?',
+      'Resume su stack técnico',
+      '¿Encaja para un rol de Engineering Manager?',
+      '¿Cuáles son sus logros más medibles?'
+    ]
+  },
+  en: {
+    pdfBtn: 'Download CV',
+    tabExp: 'Experience', tabSkills: 'Skills', tabEdu: 'Education',
+    mYears: 'years of experience', mTeam: 'engineers led',
+    mTesting: 'testing time', mLoad: 'critical module load',
+    chatTitle: 'Ask my résumé', chatSub: 'AI assistant · replies in your language',
+    placeholder: 'Type your question…',
+    greeting: "Hi! 👋 I'm the AI assistant for this résumé. Ask me about the experience, tech stack, how AI is applied in development, or whether it fits a role you're hiring for. Write in **English or Spanish** — I answer in whichever you use.",
+    typing: 'Typing',
+    disclaimer: 'AI-generated answers based on the résumé. May contain inaccuracies.',
+    footer: 'Built with Cloudflare Workers AI · Llama 3.3',
+    errNetwork: "I couldn't reach the assistant. Check your connection and try again.",
+    errEmpty: 'No response from the model. Try rephrasing your question.',
+    pdfName: 'CV_EN.pdf',
+    pdfWorking: 'Generating…',
+    suggestions: [
+      'How does he use AI in development?',
+      'What is his team leadership experience?',
+      'Summarize his tech stack',
+      'Is he a fit for an Engineering Manager role?',
+      'What are his most measurable achievements?'
+    ]
+  }
+};
+
+const BADGES = ['PHP','Symfony','Python','TypeScript','React','PostgreSQL','Redis','Docker','Kubernetes','Playwright','AI Agents','MCP'];
+
+/* ==================================================================
+   3. ESTADO Y UTILIDADES
+   ================================================================== */
+let lang = localStorage.getItem('cv-lang')
+  || ((navigator.language || 'es').toLowerCase().startsWith('en') ? 'en' : 'es');
+let activeTab = 'exp';
+let history = [];      // [{role,content}] enviado al Worker
+let busy = false;
+let variant = null;    // variante de CV para una vacante (ruta /v/:id)
+
+/** Id de variante en la URL: /v/abc123 */
+const variantId = (location.pathname.match(/^\/v\/([a-z0-9-]{3,40})\/?$/) || [])[1] || null;
+
+/**
+ * CV del idioma pedido con la variante aplicada encima.
+ *
+ * La variante solo puede sustituir titular y resumen, y reordenar u ocultar
+ * elementos que ya existen, referenciándolos por su id estable. Un id que ya no
+ * está en el CV (logro borrado) se ignora sin romper nada.
+ */
+function cvFor(l) {
+  const base = project(baseCV, l);
+  if (!variant) return base;
+
+  const over = variant[l] || {};
+  const out = { ...base };
+  if (over.headline) out.headline = over.headline;
+  if (over.summary) out.summary = over.summary;
+
+  if (variant.bulletOrder) {
+    out.experience = base.experience.map((job) => {
+      const order = variant.bulletOrder[job.id];
+      if (!Array.isArray(order) || !order.length) return job;
+      const byId = new Map(job.bullets.map((b) => [b.id, b]));
+      const bullets = order.map((id) => byId.get(id)).filter(Boolean);
+      return bullets.length ? { ...job, bullets } : job;
+    });
+  }
+
+  if (Array.isArray(variant.skillOrder) && variant.skillOrder.length) {
+    const byId = new Map(base.skills.map((g) => [g.id, g]));
+    const skills = variant.skillOrder.map((id) => byId.get(id)).filter(Boolean);
+    if (skills.length) out.skills = skills;
+  }
+
+  return out;
+}
+
+const badgesFor = () => (variant?.badges?.length ? variant.badges : baseCV.badges);
+const suggestionsFor = (l) =>
+  variant?.[l]?.suggestions?.length ? variant[l].suggestions : UI[l].suggestions;
+
+const $  = (sel, root = document) => root.querySelector(sel);
+const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) =>
+  ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+
+/** Markdown -> HTML saneado (con degradación si el CDN no cargó). */
+function renderMarkdown(text) {
+  if (window.marked && window.DOMPurify) {
+    const html = marked.parse(text, { breaks: true, gfm: true });
+    return DOMPurify.sanitize(html, { ADD_ATTR: ['target', 'rel'] });
+  }
+  return esc(text)
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\n/g, '<br>');
+}
+
+/* ==================================================================
+   4. TEMA
+   ================================================================== */
+function applyTheme(dark) {
+  document.documentElement.classList.toggle('dark', dark);
+  localStorage.setItem('cv-theme', dark ? 'dark' : 'light');
+}
+applyTheme(
+  localStorage.getItem('cv-theme')
+    ? localStorage.getItem('cv-theme') === 'dark'
+    : matchMedia('(prefers-color-scheme: dark)').matches
+);
+$('#theme-toggle').addEventListener('click', () =>
+  applyTheme(!document.documentElement.classList.contains('dark'))
+);
+
+/* ==================================================================
+   5. RENDER DE LA INTERFAZ
+   ================================================================== */
+function renderContact() {
+  const cv = cvFor(lang);
+  const chip = 'inline-flex items-center gap-2 rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-2 text-sm font-medium hover:border-brand-500 hover:text-brand-700 dark:hover:text-brand-300 transition-colors';
+  const icon = {
+    mail: '<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 6 10-6"/></svg>',
+    tel:  '<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.9v3a2 2 0 01-2.2 2 19.8 19.8 0 01-8.6-3.1 19.5 19.5 0 01-6-6A19.8 19.8 0 012.1 4.2 2 2 0 014.1 2h3a2 2 0 012 1.7c.1 1 .4 1.9.7 2.8a2 2 0 01-.5 2.1L8.1 9.9a16 16 0 006 6l1.3-1.2a2 2 0 012.1-.5c.9.3 1.8.6 2.8.7a2 2 0 011.7 2z"/></svg>',
+    li:   '<svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M4.98 3.5A2.5 2.5 0 112.5 6 2.5 2.5 0 014.98 3.5zM3 8.98h4V21H3zM9 8.98h3.8v1.64h.05A4.17 4.17 0 0117 8.6c4 0 4.75 2.63 4.75 6.05V21h-4v-5.5c0-1.31-.02-3-1.83-3s-2.11 1.43-2.11 2.9V21H9z"/></svg>'
+  };
+  const links = [];
+  if (cv.email) links.push(`<a href="mailto:${esc(cv.email)}" class="${chip}">${icon.mail}${esc(cv.email)}</a>`);
+  if (cv.phone) links.push(`<a href="tel:${esc(cv.phone.replace(/[^+0-9]/g, ''))}" class="${chip}">${icon.tel}${esc(cv.phone)}</a>`);
+  if (cv.linkedin) links.push(`<a href="${esc(cv.linkedin)}" target="_blank" rel="noopener noreferrer" class="${chip}">${icon.li}LinkedIn</a>`);
+  $('#contact').innerHTML = links.join('');
+
+  $('#cv-name').textContent = cv.name;
+  document.title = `${cv.name} — ${cv.headline}`;
+}
+
+function renderMetrics() {
+  $('#metrics').innerHTML = cvFor(lang).metrics.map((m) => `
+    <div class="rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 p-3">
+      <div class="text-2xl font-extrabold text-brand-700 dark:text-brand-300">${esc(m.value)}</div>
+      <div class="text-xs text-slate-500 dark:text-slate-400 leading-tight mt-0.5">${esc(m.label)}</div>
+    </div>`).join('');
+}
+
+function renderBadges() {
+  $('#badges').innerHTML = badgesFor().map((b) =>
+    `<span class="px-2.5 py-1 rounded-full text-xs font-medium bg-brand-50 text-brand-800 border border-brand-200
+      dark:bg-brand-900/40 dark:text-brand-200 dark:border-brand-800">${esc(b)}</span>`
+  ).join('');
+}
+
+function renderTabs() {
+  const cv = cvFor(lang);
+  const panels = {
+    exp: () => cv.experience.map((job, i) => `
+      <article class="relative pl-6 ${i < cv.experience.length - 1 ? 'pb-6' : ''}">
+        <span class="absolute left-0 top-1.5 w-3 h-3 rounded-full bg-brand-600 ring-4 ring-brand-100 dark:ring-brand-900/60"></span>
+        ${i < cv.experience.length - 1 ? '<span class="absolute left-[5px] top-5 bottom-0 w-px bg-slate-200 dark:bg-slate-700"></span>' : ''}
+        <div class="flex flex-wrap items-baseline justify-between gap-x-3">
+          <h3 class="font-bold text-slate-900 dark:text-white">${esc(job.title)}</h3>
+          <span class="text-xs text-slate-500 dark:text-slate-400 font-medium">${esc(job.dates)}</span>
+        </div>
+        <p class="text-sm text-brand-700 dark:text-brand-300 font-medium">${esc(job.org)} · ${esc(job.place)}</p>
+        <ul class="mt-2 space-y-1.5 text-sm text-slate-600 dark:text-slate-300 list-disc pl-4 marker:text-brand-400">
+          ${job.bullets.map((b) => `<li>${esc(b.text)}</li>`).join('')}
+        </ul>
+      </article>`).join(''),
+
+    skills: () => cv.skills.map((g) => `
+      <div class="mb-5 last:mb-0">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">${esc(g.label)}</h3>
+        <div class="flex flex-wrap gap-1.5">
+          ${g.items.map((s) => `<span class="px-2.5 py-1 rounded-lg text-sm bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">${esc(s)}</span>`).join('')}
+        </div>
+      </div>`).join(''),
+
+    edu: () => `
+      <div class="space-y-5">
+        <div>
+          <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">${esc(cv.secEdu)}</h3>
+          <p class="font-semibold text-slate-900 dark:text-white">${esc(cv.education.degree)}</p>
+          <p class="text-sm text-slate-500 dark:text-slate-400">${esc(cv.education.school)}</p>
+        </div>
+        <div>
+          <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">${esc(cv.secCerts)}</h3>
+          <ul class="text-sm text-slate-600 dark:text-slate-300 list-disc pl-4 marker:text-brand-400">
+            ${cv.certs.map((c) => `<li>${esc(c)}</li>`).join('')}
+          </ul>
+        </div>
+        <div>
+          <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">${esc(cv.secLang)}</h3>
+          <ul class="text-sm text-slate-600 dark:text-slate-300 list-disc pl-4 marker:text-brand-400">
+            ${cv.languages.map((l) => `<li>${esc(l)}</li>`).join('')}
+          </ul>
+        </div>
+      </div>`
+  };
+
+  $('#tab-panels').innerHTML = `<div class="animate-fadeUp">${panels[activeTab]()}</div>`;
+
+  $$('.tab-btn').forEach((btn) => {
+    const on = btn.dataset.tab === activeTab;
+    btn.className = 'tab-btn px-4 py-2.5 text-sm font-semibold rounded-t-lg whitespace-nowrap transition-colors ' +
+      (on ? 'bg-brand-50 text-brand-800 dark:bg-brand-900/50 dark:text-brand-200'
+          : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200');
+    btn.setAttribute('aria-selected', on);
+  });
+}
+
+function renderSuggestions() {
+  $('#suggestions').innerHTML = suggestionsFor(lang).map((q) =>
+    `<button type="button" class="suggestion text-xs px-3 py-1.5 rounded-full border border-slate-300 dark:border-slate-700
+      text-slate-600 dark:text-slate-300 hover:border-brand-500 hover:text-brand-700 dark:hover:text-brand-300 transition-colors">${esc(q)}</button>`
+  ).join('');
+}
+
+function renderLangButtons() {
+  $$('[data-lang-btn]').forEach((btn) => {
+    const on = btn.dataset.langBtn === lang;
+    btn.classList.toggle('bg-brand-700', on);
+    btn.classList.toggle('text-white', on);
+    btn.classList.toggle('text-slate-500', !on);
+    btn.setAttribute('aria-pressed', on);
+  });
+}
+
+function applyLanguage() {
+  const t = UI[lang], cv = cvFor(lang);
+  document.documentElement.lang = lang;
+
+  $$('[data-i18n]').forEach((el) => {
+    const key = el.dataset.i18n;
+    el.textContent = t[key] ?? cv[key] ?? '';
+  });
+
+  $('#summary').textContent = cv.summary;
+  $('#chat-input').placeholder = t.placeholder;
+  localStorage.setItem('cv-lang', lang);
+
+  renderLangButtons();
+  renderContact();
+  renderMetrics();
+  renderBadges();
+  renderTabs();
+  renderSuggestions();
+  buildPrintDoc();
+  resetChat();
+}
+
+/* ==================================================================
+   6. CHAT
+   ================================================================== */
+const chatLog = $('#chat-log');
+const chatInput = $('#chat-input');
+const chatSend = $('#chat-send');
+
+function scrollChat() { chatLog.scrollTop = chatLog.scrollHeight; }
+
+function addBubble(role, content = '') {
+  const wrap = document.createElement('div');
+  wrap.className = 'animate-fadeUp flex ' + (role === 'user' ? 'justify-end' : 'justify-start');
+
+  const bubble = document.createElement('div');
+  bubble.className = 'md max-w-[88%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ' +
+    (role === 'user'
+      ? 'bg-brand-700 text-white rounded-br-md whitespace-pre-wrap'
+      : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-bl-md');
+
+  // El texto del usuario se inserta como texto plano; el del asistente, como Markdown saneado.
+  if (role === 'user') bubble.textContent = content;
+  else bubble.innerHTML = renderMarkdown(content);
+
+  wrap.appendChild(bubble);
+  chatLog.appendChild(wrap);
+  scrollChat();
+  return bubble;
+}
+
+function addTyping() {
+  const wrap = document.createElement('div');
+  wrap.id = 'typing';
+  wrap.className = 'animate-fadeUp flex justify-start';
+  wrap.innerHTML = `
+    <div class="bg-slate-100 dark:bg-slate-800 rounded-2xl rounded-bl-md px-4 py-3 flex items-center gap-2">
+      <span class="text-xs text-slate-500 dark:text-slate-400">${esc(UI[lang].typing)}</span>
+      <span class="flex gap-1">
+        <span class="w-1.5 h-1.5 rounded-full bg-slate-400 animate-blink"></span>
+        <span class="w-1.5 h-1.5 rounded-full bg-slate-400 animate-blink" style="animation-delay:.2s"></span>
+        <span class="w-1.5 h-1.5 rounded-full bg-slate-400 animate-blink" style="animation-delay:.4s"></span>
+      </span>
+    </div>`;
+  chatLog.appendChild(wrap);
+  scrollChat();
+}
+const removeTyping = () => $('#typing')?.remove();
+
+function setBusy(state) {
+  busy = state;
+  chatSend.disabled = state;
+  chatInput.disabled = state;
+}
+
+function resetChat() {
+  history = [];
+  chatLog.innerHTML = '';
+  addBubble('assistant', UI[lang].greeting);
+}
+
+async function sendMessage(text) {
+  const message = text.trim();
+  if (!message || busy) return;
+
+  addBubble('user', message);
+  history.push({ role: 'user', content: message });
+
+  chatInput.value = '';
+  chatInput.style.height = 'auto';
+  setBusy(true);
+  addTyping();
+
+  let bubble = null;
+  let answer = '';
+
+  const paint = (chunk) => {
+    answer += chunk;
+    if (!bubble) { removeTyping(); bubble = addBubble('assistant', ''); }
+    bubble.innerHTML = renderMarkdown(answer);
+    scrollChat();
+  };
+
+  try {
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ messages: history.slice(-8), lang, variantId })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      const msg = err?.message?.[lang] || UI[lang].errNetwork;
+      removeTyping();
+      addBubble('assistant', msg);
+      setBusy(false);
+      return;
+    }
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop();                       // fragmento incompleto
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed.startsWith('data:')) continue;
+        const payload = trimmed.slice(5).trim();
+        if (payload === '[DONE]') continue;
+        try {
+          const obj = JSON.parse(payload);
+          if (obj.response) paint(obj.response);
+        } catch { /* keep-alive o fragmento parcial */ }
+      }
+    }
+
+    removeTyping();
+    if (!answer.trim()) {
+      addBubble('assistant', UI[lang].errEmpty);
+    } else {
+      history.push({ role: 'assistant', content: answer });
+    }
+  } catch (e) {
+    console.error(e);
+    removeTyping();
+    addBubble('assistant', UI[lang].errNetwork);
+  } finally {
+    setBusy(false);
+    chatInput.focus();
+  }
+}
+
+$('#chat-form').addEventListener('submit', (e) => {
+  e.preventDefault();
+  sendMessage(chatInput.value);
+});
+
+chatInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(chatInput.value); }
+});
+
+chatInput.addEventListener('input', () => {
+  chatInput.style.height = 'auto';
+  chatInput.style.height = Math.min(chatInput.scrollHeight, 128) + 'px';
+});
+
+$('#suggestions').addEventListener('click', (e) => {
+  const btn = e.target.closest('.suggestion');
+  if (btn) sendMessage(btn.textContent);
+});
+
+/* ==================================================================
+   7. DOCUMENTO PDF
+   ================================================================== */
+function buildPrintDoc() {
+  const cv = cvFor(lang);
+  $('#print-doc').innerHTML = `
+    <div class="p-name">${esc(cv.name)}</div>
+    <div class="p-role">${esc(cv.headline)}</div>
+    <div class="p-contact">
+      ${[cv.location, cv.email, cv.phone, cv.linkedinLabel].filter(Boolean)
+          .map((x) => `<span>${esc(x)}</span>`).join(' &nbsp;•&nbsp; ')}
+    </div>
+
+    <div class="p-sec">${esc(cv.secSum)}</div>
+    <div class="p-sum">${esc(cv.summary)}</div>
+
+    <div class="p-sec">${esc(cv.secExp)}</div>
+    ${cv.experience.map((job) => `
+      <div class="p-job">
+        <div class="p-job-head">
+          <span class="p-job-title">${esc(job.title)}</span>
+          <span class="p-job-dates">${esc(job.dates)}</span>
+        </div>
+        <div class="p-job-org">${esc(job.org)} • ${esc(job.place)}</div>
+        <ul>${job.bullets.map((b) => `<li>${esc(b.text)}</li>`).join('')}</ul>
+      </div>`).join('')}
+
+    <div class="p-sec">${esc(cv.secSkills)}</div>
+    ${cv.skills.map((g) => `<div class="p-row"><b>${esc(g.label)}:</b> <span class="p-muted">${g.items.map(esc).join(' · ')}</span></div>`).join('')}
+
+    <div class="p-sec">${esc(cv.secEdu)}</div>
+    <div class="p-row">${esc(cv.education.degree)}<br><span class="p-muted">${esc(cv.education.school)}</span></div>
+
+    <div class="p-sec">${esc(cv.secCerts)}</div>
+    <div class="p-row p-muted">${cv.certs.map(esc).join(' · ')}</div>
+
+    <div class="p-sec">${esc(cv.secLang)}</div>
+    <div class="p-row p-muted">${cv.languages.map(esc).join(' · ')}</div>
+  `;
+}
+
+$('#btn-pdf').addEventListener('click', async () => {
+  const btn = $('#btn-pdf');
+  const label = btn.querySelector('[data-i18n="pdfBtn"]');
+  const original = label.textContent;
+
+  // Sin html2pdf (CDN bloqueado) -> caemos al diálogo de impresión del navegador.
+  if (typeof html2pdf === 'undefined') { window.print(); return; }
+
+  btn.disabled = true;
+  label.textContent = UI[lang].pdfWorking;
+
+  const node = $('#print-doc');
+  const wasDark = document.documentElement.classList.contains('dark');
+  document.documentElement.classList.remove('dark');   // html2canvas hereda estilos del documento
+
+  try {
+    await html2pdf().set({
+      margin: 0,
+      filename: UI[lang].pdfName,
+      image: { type: 'jpeg', quality: 0.98 },
+      // Sin `windowWidth`: forzarlo descuadra el clon respecto al viewport real
+      // y el PDF sale recortado por la izquierda.
+      html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', scrollX: 0, scrollY: 0 },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      pagebreak: { mode: ['css', 'legacy'] }
+    }).from(node).save();
+  } catch (e) {
+    console.error('PDF export failed:', e);
+    window.print();
+  } finally {
+    if (wasDark) document.documentElement.classList.add('dark');
+    label.textContent = original;
+    btn.disabled = false;
+  }
+});
+
+/* ==================================================================
+   8. ARRANQUE
+   ================================================================== */
+$$('[data-lang-btn]').forEach((btn) =>
+  btn.addEventListener('click', () => {
+    if (lang === btn.dataset.langBtn) return;
+    lang = btn.dataset.langBtn;
+    applyLanguage();
+  })
+);
+
+$$('.tab-btn').forEach((btn) =>
+  btn.addEventListener('click', () => { activeTab = btn.dataset.tab; renderTabs(); })
+);
+
+/**
+ * Si la URL es /v/:id, carga la variante ANTES del primer render para evitar
+ * que se vea el CV genérico y luego salte al adaptado.
+ */
+async function loadVariant() {
+  if (!variantId) return;
+
+  // Los CVs por vacante no deben indexarse ni descubrirse desde buscadores.
+  const meta = document.createElement('meta');
+  meta.name = 'robots';
+  meta.content = 'noindex, nofollow';
+  document.head.appendChild(meta);
+
+  try {
+    const res = await fetch(`/api/variant/${variantId}`);
+    if (res.ok) variant = (await res.json()).variant;
+    else console.warn('Variante no encontrada; se muestra el CV genérico.');
+  } catch (e) {
+    console.warn('No se pudo cargar la variante:', e.message);
+  }
+}
+
+/** El CV base es obligatorio: sin él no hay nada que pintar. */
+async function loadBaseCV() {
+  const res = await fetch('/api/cv');
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  baseCV = (await res.json()).cv;
+}
+
+(async () => {
+  try {
+    await loadBaseCV();
+  } catch (e) {
+    console.error('No se pudo cargar el CV:', e);
+    document.querySelector('main').innerHTML =
+      '<p class="text-center text-slate-500 py-20">No se pudo cargar el CV. Recarga la página.</p>';
+    return;
+  }
+  await loadVariant();      // si falla, se cae con gracia al CV genérico
+  applyLanguage();
+})();
+</script>
+</body>
+</html>

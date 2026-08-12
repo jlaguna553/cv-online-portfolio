@@ -1,0 +1,14 @@
+{
+  "name": "cv-online",
+  "version": "1.0.0",
+  "private": true,
+  "description": "CV interactivo bilingüe con asistente de IA sobre Cloudflare Workers AI",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "tail": "wrangler tail"
+  },
+  "devDependencies": {
+    "wrangler": "^4.40.0"
+  }
+}

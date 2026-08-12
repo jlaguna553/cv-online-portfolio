@@ -1,0 +1,35 @@
+#:schema node_modules/wrangler/config-schema.json
+name = "cv-online"
+main = "src/worker.js"
+compatibility_date = "2025-07-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Sirve el frontend estático desde ./public en el mismo deploy (sin costo extra).
+[assets]
+directory = "./public"
+binding = "ASSETS"
+# "none", NO "single-page-application": el fallback SPA devolvía index.html con
+# 200 para CUALQUIER ruta inexistente (/cualquier-cosa.png incluida), lo que
+# convertía enlaces rotos en falsos éxitos. El Worker sirve /v/:id a mano.
+not_found_handling = "none"
+
+# Binding de Workers AI — gratis dentro de la cuota diaria de neuronas.
+[ai]
+binding = "AI"
+
+# Almacén de las variantes de CV por vacante. Free tier: 100k lecturas y
+# 1k escrituras al día, de sobra para esto.
+# Creado con: npx wrangler kv namespace create VARIANTS
+[[kv_namespaces]]
+binding = "VARIANTS"
+id = "67e577a5351d4ca589fd0816e5094874"
+
+# Rate limiting nativo (gratis). 15 mensajes por minuto y por IP.
+# Si prefieres desactivarlo, comenta este bloque: el Worker lo detecta y lo omite.
+[[ratelimits]]
+name = "CHAT_RATE_LIMIT"
+namespace_id = "1001"
+simple = { limit = 15, period = 60 }
+
+[observability]
+enabled = true
